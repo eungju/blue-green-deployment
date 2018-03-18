@@ -9,12 +9,13 @@ class ConnectionGateControlServer(connectionGate: ConnectionGate, port: Int) : A
                 when (exchange.requestPath) {
                     "/open" -> connectionGate.open()
                     "/halfClose" -> connectionGate.halfClose()
+                    "/close" -> connectionGate.close()
                 }
-                exchange.setPersistent(false)
+                exchange.isPersistent = false
                 exchange.responseSender.send(listOf("port: ${connectionGate.port}",
-                        "accepting: ${connectionGate.isAccepting()}",
+                        "state: ${connectionGate.state}",
                         "established: ${connectionGate.getEstablished()}")
-                        .joinToString(", "))
+                        .joinToString("\r\n"))
             }
             .build()
             .apply {
