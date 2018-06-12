@@ -2,27 +2,32 @@ package bluegreen
 
 import io.undertow.Undertow
 import io.undertow.UndertowOptions
+import io.undertow.server.HttpHandler
 import org.xnio.OptionMap
 import org.xnio.nio.ReuseNioXnioProvider
 
 class App(val name: String, port: Int) : AutoCloseable {
     private val xnioWorker = ReuseNioXnioProvider().instance.createWorker(OptionMap.EMPTY)
 
+    private val closingHandler = ConnectionCloseHandler(HttpHandler {
+        it.statusCode = 200
+        it.responseSender.send(name)
+        it.endExchange()
+    })
+
     private val httpServer = Undertow.builder()
             .setWorker<Undertow.Builder>(xnioWorker)
             .addHttpListener(port, "")
             .setServerOption(UndertowOptions.ENABLE_STATISTICS, true)
-            .setHandler {
-                it.statusCode = 200
-                it.responseSender.send(name)
-                it.endExchange()
-            }
+            .setHandler(closingHandler)
             .build()
 
     val connectionControl: ConnectionControl = UndertowConnectionControl(httpServer, port)
+            .also { it.addListener(closingHandler) }
 
     override fun close() {
         connectionControl.close()
+        connectionControl.removeListener(closingHandler)
         xnioWorker.shutdown()
     }
 

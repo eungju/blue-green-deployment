@@ -11,6 +11,15 @@ class UndertowConnectionControl(private val undertow: Undertow, override val por
     private val _state = AtomicReference(ConnectionControl.State.CLOSED)
     private var listenerInfo = emptyList<Undertow.ListenerInfo>()
     private var connectorStatistics: ConnectorStatistics = AggregateConnectorStatistics(emptyArray())
+    private val listeners = mutableListOf<ConnectionControl.Listener>()
+
+    override fun addListener(listener: ConnectionControl.Listener) {
+        listeners.add(listener)
+    }
+
+    override fun removeListener(listener: ConnectionControl.Listener) {
+        listeners.remove(listener)
+    }
 
     override fun open() {
         if (_state.compareAndSet(ConnectionControl.State.CLOSED, ConnectionControl.State.OPEN)) {
@@ -18,17 +27,14 @@ class UndertowConnectionControl(private val undertow: Undertow, override val por
             listenerInfo = listenerInfo.filter { it.connectorStatistics.activeConnections > 0 } +
                     undertow.listenerInfo.filter { (it.address as? InetSocketAddress)?.port == port }.first()
             connectorStatistics = AggregateConnectorStatistics(listenerInfo.map { it.connectorStatistics }.toTypedArray())
+            listeners.forEach { it.onChange(ConnectionControl.State.OPEN) }
         }
     }
 
     override fun close() {
-        if (_state.compareAndSet(ConnectionControl.State.OPEN, ConnectionControl.State.CLOSING)) {
+        if (_state.compareAndSet(ConnectionControl.State.OPEN, ConnectionControl.State.CLOSED)) {
             undertow.stop()
-            //TODO: Start to send response with "Connection: close"
-            if (connectorStatistics.activeConnections == 0L) {
-                if (_state.compareAndSet(ConnectionControl.State.CLOSING, ConnectionControl.State.CLOSED)) {
-                }
-            }
+            listeners.forEach { it.onChange(ConnectionControl.State.CLOSED) }
         }
     }
 

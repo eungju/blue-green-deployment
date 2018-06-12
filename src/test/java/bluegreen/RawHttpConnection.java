@@ -32,10 +32,12 @@ public class RawHttpConnection implements AutoCloseable {
 
     @Override
     public void close() {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         socket = null;
     }

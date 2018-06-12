@@ -5,6 +5,10 @@ interface ConnectionControl {
 
     val state: State
 
+    fun addListener(listener: Listener)
+
+    fun removeListener(listener: Listener)
+
     fun open()
 
     fun close()
@@ -12,6 +16,10 @@ interface ConnectionControl {
     fun getEstablished(): Long
 
     enum class State {
-        OPEN, CLOSING, CLOSED
+        OPEN, CLOSED
+    }
+
+    interface Listener {
+        fun onChange(state: State)
     }
 }

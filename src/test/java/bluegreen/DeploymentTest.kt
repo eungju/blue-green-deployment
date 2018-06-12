@@ -34,6 +34,18 @@ class DeploymentTest {
     @Nested
     inner class WhenClosed {
         @Test
+        fun rejectNewConnections() {
+            App("blue", servicePort).use { blue ->
+                blue.connectionControl.open()
+                RawHttpConnection("localhost", servicePort).use { establishedConn ->
+                    establishedConn.request(pingRequest()).body.get()
+                }
+                blue.connectionControl.close()
+                assertThrows(Exception::class.java) { RawHttpConnection("localhost", servicePort) }
+            }
+        }
+
+        @Test
         fun keepEstablishedConnections() {
             App("blue", servicePort).use { blue ->
                 blue.connectionControl.open()
@@ -46,14 +58,15 @@ class DeploymentTest {
         }
 
         @Test
-        fun rejectNewConnections() {
+        fun handleOneRequestAndThenClose() {
             App("blue", servicePort).use { blue ->
                 blue.connectionControl.open()
                 RawHttpConnection("localhost", servicePort).use { establishedConn ->
                     establishedConn.request(pingRequest()).body.get()
+                    blue.connectionControl.close()
+                    assertEquals("blue", establishedConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
+                    assertFalse(establishedConn.isOpen)
                 }
-                blue.connectionControl.close()
-                assertThrows(Exception::class.java) { RawHttpConnection("localhost", servicePort) }
             }
         }
     }
@@ -70,6 +83,7 @@ class DeploymentTest {
                     RawHttpConnection("localhost", servicePort).use { greenConn ->
                         assertEquals("green", greenConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
                         assertEquals("blue", blueConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
+                        assertFalse(blueConn.isOpen)
                     }
                 }
             }
