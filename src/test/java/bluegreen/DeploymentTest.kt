@@ -4,6 +4,7 @@ import com.athaydes.rawhttp.core.MethodLine
 import com.athaydes.rawhttp.core.RawHttpHeaders
 import com.athaydes.rawhttp.core.RawHttpRequest
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.net.URI
 
@@ -15,6 +16,47 @@ class DeploymentTest {
                     .with("Host", "localhost:$servicePort")
                     .build(),
             null)
+
+    @Nested
+    inner class WhenOpen {
+        @Test
+        fun acceptNewConnection() {
+            App("blue", servicePort).use { blue ->
+                blue.connectionControl.open()
+                RawHttpConnection("localhost", servicePort).use { establishedConn ->
+                    assertEquals("blue", establishedConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
+                }
+                blue.connectionControl.close()
+            }
+        }
+    }
+
+    @Nested
+    inner class WhenClosed {
+        @Test
+        fun keepEstablishedConnections() {
+            App("blue", servicePort).use { blue ->
+                blue.connectionControl.open()
+                RawHttpConnection("localhost", servicePort).use { establishedConn ->
+                    establishedConn.request(pingRequest()).body.get()
+                    blue.connectionControl.close()
+                    assertEquals("blue", establishedConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
+                }
+            }
+        }
+
+        @Test
+        fun rejectNewConnections() {
+            App("blue", servicePort).use { blue ->
+                blue.connectionControl.open()
+                RawHttpConnection("localhost", servicePort).use { establishedConn ->
+                    establishedConn.request(pingRequest()).body.get()
+                }
+                blue.connectionControl.close()
+                assertThrows(Exception::class.java) { RawHttpConnection("localhost", servicePort) }
+            }
+        }
+    }
 
     @Test
     fun handover() {
