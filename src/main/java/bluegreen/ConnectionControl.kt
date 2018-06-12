@@ -1,19 +1,17 @@
 package bluegreen
 
-interface ConnectionGate {
+interface ConnectionControl {
     val port: Int
 
     val state: State
 
     fun open()
 
-    fun halfClose()
-
     fun close()
 
     fun getEstablished(): Long
 
     enum class State {
-        OPEN, HALF_CLOSED, CLOSING, CLOSED
+        OPEN, CLOSING, CLOSED
     }
 }

@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.2.30'
+    ext.kotlin_version = '1.2.41'
 
     repositories {
         mavenCentral()
@@ -40,10 +40,10 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compile 'io.undertow:undertow-core:2.0.1.Final'
+    compile 'io.undertow:undertow-core:2.0.7.Final'
 
-    testCompile("org.junit.jupiter:junit-jupiter-api:5.1.0")
-    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.1.0")
-    testCompile 'com.squareup.okhttp3:okhttp:3.10.0'
-    testCompile 'io.reactivex.rxjava2:rxjava:2.1.10'
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.2.0")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.2.0")
+    testCompile 'io.reactivex.rxjava2:rxjava:2.1.14'
+    compile 'com.athaydes.rawhttp:rawhttp-core:1.1.0'
 }

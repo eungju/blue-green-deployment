@@ -13,14 +13,16 @@ class App(val name: String, port: Int) : AutoCloseable {
             .addHttpListener(port, "")
             .setServerOption(UndertowOptions.ENABLE_STATISTICS, true)
             .setHandler {
+                it.statusCode = 200
                 it.responseSender.send(name)
+                it.endExchange()
             }
             .build()
 
-    val connectionGate: ConnectionGate = UndertowConnectionGate(httpServer, port)
+    val connectionControl: ConnectionControl = UndertowConnectionControl(httpServer, port)
 
     override fun close() {
-        httpServer.stop()
+        connectionControl.close()
         xnioWorker.shutdown()
     }
 
@@ -28,9 +30,9 @@ class App(val name: String, port: Int) : AutoCloseable {
         @JvmStatic
         fun main(args: Array<String>) {
             val blue = App("blue", 8000)
-            val blueControl = ConnectionGateControlServer(blue.connectionGate, 8010)
+            val blueControl = ConnectionControlServer(blue.connectionControl, 8010)
             val green = App("green", 8000)
-            val greenControl = ConnectionGateControlServer(green.connectionGate, 8020)
+            val greenControl = ConnectionControlServer(green.connectionControl, 8020)
         }
     }
 }
