@@ -6,38 +6,52 @@ import io.undertow.server.HttpHandler
 import org.xnio.OptionMap
 import org.xnio.nio.ReuseNioXnioProvider
 
-class App(val name: String, port: Int) : AutoCloseable {
+class App(val name: String, publicPort: Int, privatePort: Int) : AutoCloseable {
+    val connectionControl = AcceptorControl(name)
+
     private val xnioWorker = ReuseNioXnioProvider().instance.createWorker(OptionMap.EMPTY)
 
-    private val closingHandler = ConnectionCloseHandler(HttpHandler {
-        it.statusCode = 200
-        it.responseSender.send(name)
-        it.endExchange()
-    })
-
-    private val httpServer = Undertow.builder()
+    private val publicServer = Undertow.builder()
             .setWorker<Undertow.Builder>(xnioWorker)
-            .addHttpListener(port, "")
+            .addHttpListener(publicPort, "")
             .setServerOption(UndertowOptions.ENABLE_STATISTICS, true)
-            .setHandler(closingHandler)
+            .setHandler(UndertowConnectionClose(connectionControl, HttpHandler {
+                it.statusCode = 200
+                it.responseSender.send("$name")
+            }))
             .build()
 
-    val connectionControl: ConnectionControl = UndertowConnectionControl(httpServer, port)
-            .also { it.addListener(closingHandler) }
+    private val publicAcceptor = UndertowAcceptor("public", publicServer)
+            .also { connectionControl.register(it) }
+
+    private val privateServer = Undertow.builder()
+            .setWorker<Undertow.Builder>(xnioWorker)
+            .addHttpListener(privatePort, "")
+            .setServerOption(UndertowOptions.ENABLE_STATISTICS, true)
+            .setHandler(UndertowConnectionClose(connectionControl, HttpHandler {
+                it.statusCode = 200
+                it.responseSender.send("$name-private")
+            }))
+            .build()
+
+    private val privateAcceptor = UndertowAcceptor("private", privateServer)
+            .also { connectionControl.register(it) }
 
     override fun close() {
-        connectionControl.close()
-        connectionControl.removeListener(closingHandler)
+        connectionControl.unregister(privateAcceptor)
+        privateAcceptor.close()
+        connectionControl.unregister(publicAcceptor)
+        publicAcceptor.close()
         xnioWorker.shutdown()
     }
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            val blue = App("blue", 8000)
-            val blueControl = ConnectionControlServer(blue.connectionControl, 8010)
-            val green = App("green", 8000)
-            val greenControl = ConnectionControlServer(green.connectionControl, 8020)
+            val blue = App("blue", 8000, 8001)
+            val blueControl = AppControlServer(blue.connectionControl, 8010)
+            val green = App("green", 8000, 8001)
+            val greenControl = AppControlServer(green.connectionControl, 8020)
         }
     }
 }
