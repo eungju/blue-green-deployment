@@ -1,6 +1,6 @@
 package bluegreen
 
-interface Acceptor {
+interface ConnectionGate {
     val name: String
 
     fun open()

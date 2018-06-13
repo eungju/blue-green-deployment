@@ -22,13 +22,15 @@ class DeploymentTest {
 
     fun greenServer() = App("green", publicPort, privatePort)
 
+    fun connection() = RawHttpConnection("localhost", publicPort)
+
     @Nested
     inner class WhenOpen {
         @Test
         fun acceptNewConnection() {
             blueServer().use { blue ->
                 blue.connectionControl.open()
-                RawHttpConnection("localhost", publicPort).use { establishedConn ->
+                connection().use { establishedConn ->
                     assertEquals("blue", establishedConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
                 }
                 blue.connectionControl.close()
@@ -42,7 +44,7 @@ class DeploymentTest {
         fun rejectNewConnections() {
             blueServer().use { blue ->
                 blue.connectionControl.open()
-                RawHttpConnection("localhost", publicPort).use { establishedConn ->
+                connection().use { establishedConn ->
                     establishedConn.request(pingRequest()).body.get()
                 }
                 blue.connectionControl.close()
@@ -54,7 +56,7 @@ class DeploymentTest {
         fun keepEstablishedConnections() {
             blueServer().use { blue ->
                 blue.connectionControl.open()
-                RawHttpConnection("localhost", publicPort).use { establishedConn ->
+                connection().use { establishedConn ->
                     establishedConn.request(pingRequest()).body.get()
                     blue.connectionControl.close()
                     assertEquals("blue", establishedConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
@@ -66,7 +68,7 @@ class DeploymentTest {
         fun handleOneRequestAndThenClose() {
             blueServer().use { blue ->
                 blue.connectionControl.open()
-                RawHttpConnection("localhost", publicPort).use { establishedConn ->
+                connection().use { establishedConn ->
                     establishedConn.request(pingRequest()).body.get()
                     blue.connectionControl.close()
                     assertEquals("blue", establishedConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
@@ -81,11 +83,11 @@ class DeploymentTest {
         blueServer().use { blue ->
             greenServer().use { green ->
                 blue.connectionControl.open()
-                RawHttpConnection("localhost", publicPort).use { blueConn ->
+                connection().use { blueConn ->
                     assertEquals("blue", blueConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
                     green.connectionControl.open()
                     blue.connectionControl.close()
-                    RawHttpConnection("localhost", publicPort).use { greenConn ->
+                    connection().use { greenConn ->
                         assertEquals("green", greenConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
                         assertEquals("blue", blueConn.request(pingRequest()).body.get().asString(Charsets.UTF_8))
                         assertFalse(blueConn.isOpen)

@@ -5,13 +5,13 @@ import io.undertow.server.AggregateConnectorStatistics
 import io.undertow.server.ConnectorStatistics
 import java.util.concurrent.atomic.AtomicReference
 
-class UndertowAcceptor(override val name: String, private val undertow: Undertow) : Acceptor {
-    private val _state = AtomicReference(Acceptor.State.CLOSED)
+class UndertowConnectionGate(override val name: String, private val undertow: Undertow) : ConnectionGate {
+    private val _state = AtomicReference(ConnectionGate.State.CLOSED)
     private var listenerInfo = emptyList<Undertow.ListenerInfo>()
     private var connectorStatistics: ConnectorStatistics = AggregateConnectorStatistics(emptyArray())
 
     override fun open() {
-        if (_state.compareAndSet(Acceptor.State.CLOSED, Acceptor.State.OPEN)) {
+        if (_state.compareAndSet(ConnectionGate.State.CLOSED, ConnectionGate.State.OPEN)) {
             undertow.start()
             listenerInfo = listenerInfo.filter { it.connectorStatistics.activeConnections > 0 } +
                     undertow.listenerInfo
@@ -20,7 +20,7 @@ class UndertowAcceptor(override val name: String, private val undertow: Undertow
     }
 
     override fun close() {
-        if (_state.compareAndSet(Acceptor.State.OPEN, Acceptor.State.CLOSED)) {
+        if (_state.compareAndSet(ConnectionGate.State.OPEN, ConnectionGate.State.CLOSED)) {
             undertow.stop()
         }
     }

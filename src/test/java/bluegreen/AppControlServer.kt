@@ -2,7 +2,7 @@ package bluegreen
 
 import io.undertow.Undertow
 
-class AppControlServer(acceptorControl: AcceptorControl, port: Int) : AutoCloseable {
+class AppControlServer(acceptorControl: ConnectionControl, port: Int) : AutoCloseable {
     private val undertow = Undertow.builder()
             .addHttpListener(port, "")
             .setHandler { exchange ->
@@ -11,7 +11,7 @@ class AppControlServer(acceptorControl: AcceptorControl, port: Int) : AutoClosea
                     "/close" -> acceptorControl.close()
                 }
                 exchange.isPersistent = false
-                exchange.responseSender.send(acceptorControl.getAcceptors()
+                exchange.responseSender.send(acceptorControl.getGates()
                         .map {
                             listOf("name: ${it.name}",
                                     "state: ${it.getState()}",

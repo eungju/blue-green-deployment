@@ -7,7 +7,7 @@ import org.xnio.OptionMap
 import org.xnio.nio.ReuseNioXnioProvider
 
 class App(val name: String, publicPort: Int, privatePort: Int) : AutoCloseable {
-    val connectionControl = AcceptorControl(name)
+    val connectionControl = ConnectionControl(name)
 
     private val xnioWorker = ReuseNioXnioProvider().instance.createWorker(OptionMap.EMPTY)
 
@@ -21,7 +21,7 @@ class App(val name: String, publicPort: Int, privatePort: Int) : AutoCloseable {
             }))
             .build()
 
-    private val publicAcceptor = UndertowAcceptor("public", publicServer)
+    private val publicAcceptor = UndertowConnectionGate("public", publicServer)
             .also { connectionControl.register(it) }
 
     private val privateServer = Undertow.builder()
@@ -34,7 +34,7 @@ class App(val name: String, publicPort: Int, privatePort: Int) : AutoCloseable {
             }))
             .build()
 
-    private val privateAcceptor = UndertowAcceptor("private", privateServer)
+    private val privateAcceptor = UndertowConnectionGate("private", privateServer)
             .also { connectionControl.register(it) }
 
     override fun close() {
