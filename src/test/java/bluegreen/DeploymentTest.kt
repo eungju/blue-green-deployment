@@ -10,7 +10,6 @@ import java.net.URI
 
 class DeploymentTest {
     private val publicPort = 8000
-    private val privatePort = 8001
 
     fun pingRequest() = RawHttpRequest(MethodLine("GET", URI.create("/"), "HTTP/1.1"),
             RawHttpHeaders.Builder.newBuilder()
@@ -18,9 +17,9 @@ class DeploymentTest {
                     .build(),
             null)
 
-    fun blueServer() = App("blue", publicPort, privatePort)
+    fun blueServer() = App("blue", publicPort)
 
-    fun greenServer() = App("green", publicPort, privatePort)
+    fun greenServer() = App("green", publicPort)
 
     fun connection() = RawHttpConnection("localhost", publicPort)
 
