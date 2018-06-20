@@ -3,9 +3,9 @@ package bluegreen
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
 
-class UndertowConnectionClose(private val connectionGate: ConnectionGate, private val next: HttpHandler) : HttpHandler {
+class UndertowConnectionClose(private val connectionControl: ConnectionControl, private val next: HttpHandler) : HttpHandler {
     override fun handleRequest(exchange: HttpServerExchange) {
-        if (connectionGate.getState() == ConnectionGate.State.CLOSED) {
+        if (connectionControl.getState() is ConnectionControl.State.CLOSED) {
             exchange.isPersistent = false
         }
         next.handleRequest(exchange)

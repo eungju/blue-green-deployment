@@ -1,8 +1,11 @@
 package bluegreen
 
-class ConnectionControl(override val name: String) : ConnectionGate {
+import java.time.Clock
+import java.time.Instant
+
+class ConnectionControl(private val clock: Clock) {
     private val gates = mutableListOf<ConnectionGate>()
-    private var state: ConnectionGate.State = ConnectionGate.State.CLOSED
+    private var state: State = State.CLOSED(clock.instant())
 
     fun register(connectionGate: ConnectionGate) {
         gates.add(connectionGate)
@@ -14,17 +17,20 @@ class ConnectionControl(override val name: String) : ConnectionGate {
 
     fun getGates(): List<ConnectionGate> = gates
 
-    override fun open() {
-        state = ConnectionGate.State.OPEN
+    fun open() {
+        state = State.OPEN(clock.instant())
         gates.forEach { it.open() }
     }
 
-    override fun close() {
-        state = ConnectionGate.State.CLOSED
+    fun close() {
+        state = State.CLOSED(clock.instant())
         gates.forEach { it.close() }
     }
 
-    override fun getState(): ConnectionGate.State = state
+    fun getState(): State = state
 
-    override fun getEstablished(): Int = gates.map { it.getEstablished() }.sum()
+    sealed class State(open val timestamp: Instant) {
+        data class OPEN(override val timestamp: Instant) : State(timestamp)
+        data class CLOSED(override val timestamp: Instant) : State((timestamp))
+    }
 }
