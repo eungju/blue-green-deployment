@@ -1,5 +1,7 @@
 package bluegreen
 
+import bluegreen.undertow.UndertowConnectionClose
+import bluegreen.undertow.UndertowConnectionGate
 import io.undertow.Undertow
 import io.undertow.UndertowOptions
 import io.undertow.server.HttpHandler
@@ -13,17 +15,17 @@ class App(val name: String, port: Int) : AutoCloseable {
     private val xnioWorker = ReuseNioXnioProvider().instance.createWorker(OptionMap.EMPTY)
 
     private val publicServer = Undertow.builder()
-            .setWorker<Undertow.Builder>(xnioWorker)
-            .addHttpListener(port, "")
-            .setServerOption(UndertowOptions.ENABLE_STATISTICS, true)
-            .setHandler(UndertowConnectionClose(connectionControl, HttpHandler {
-                it.statusCode = 200
-                it.responseSender.send("$name")
-            }))
-            .build()
+        .setWorker<Undertow.Builder>(xnioWorker)
+        .addHttpListener(port, "")
+        .setServerOption(UndertowOptions.ENABLE_STATISTICS, true)
+        .setHandler(UndertowConnectionClose(connectionControl, HttpHandler {
+            it.statusCode = 200
+            it.responseSender.send("$name")
+        }))
+        .build()
 
     private val publicGate = UndertowConnectionGate("public", publicServer)
-            .also { connectionControl.register(it) }
+        .also { connectionControl.register(it) }
 
     override fun close() {
         connectionControl.unregister(publicGate)

@@ -1,17 +1,18 @@
-package bluegreen
+package bluegreen.undertow
 
+import bluegreen.ConnectionGate
 import io.undertow.Undertow
 import io.undertow.server.AggregateConnectorStatistics
 import io.undertow.server.ConnectorStatistics
 import java.util.concurrent.atomic.AtomicReference
 
 class UndertowConnectionGate(override val name: String, private val undertow: Undertow) : ConnectionGate {
-    private val _state = AtomicReference(ConnectionGate.State.CLOSED)
+    private val state = AtomicReference(ConnectionGate.State.CLOSED)
     private var listenerInfo = emptyList<Undertow.ListenerInfo>()
     private var connectorStatistics: ConnectorStatistics = AggregateConnectorStatistics(emptyArray())
 
     override fun open() {
-        if (_state.compareAndSet(ConnectionGate.State.CLOSED, ConnectionGate.State.OPEN)) {
+        if (state.compareAndSet(ConnectionGate.State.CLOSED, ConnectionGate.State.OPEN)) {
             undertow.start()
             listenerInfo = listenerInfo.filter { it.connectorStatistics.activeConnections > 0 } +
                     undertow.listenerInfo
@@ -20,12 +21,12 @@ class UndertowConnectionGate(override val name: String, private val undertow: Un
     }
 
     override fun close() {
-        if (_state.compareAndSet(ConnectionGate.State.OPEN, ConnectionGate.State.CLOSED)) {
+        if (state.compareAndSet(ConnectionGate.State.OPEN, ConnectionGate.State.CLOSED)) {
             undertow.stop()
         }
     }
 
-    override fun getState() = _state.get()
+    override fun getState() = state.get()
 
     override fun getEstablished(): Int = connectorStatistics.activeConnections.toInt()
 }

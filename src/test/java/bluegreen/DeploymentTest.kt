@@ -1,5 +1,6 @@
 package bluegreen
 
+import bluegreen.RawHttpConnection
 import com.athaydes.rawhttp.core.MethodLine
 import com.athaydes.rawhttp.core.RawHttpHeaders
 import com.athaydes.rawhttp.core.RawHttpRequest
@@ -7,15 +8,16 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.net.URI
+import java.util.Random
 
 class DeploymentTest {
-    private val publicPort = 8000
+    private val publicPort = 1024 + Random().nextInt(1024)
 
     fun pingRequest() = RawHttpRequest(MethodLine("GET", URI.create("/"), "HTTP/1.1"),
-            RawHttpHeaders.Builder.newBuilder()
-                    .with("Host", "localhost:$publicPort")
-                    .build(),
-            null)
+        RawHttpHeaders.Builder.newBuilder()
+            .with("Host", "localhost:$publicPort")
+            .build(),
+        null)
 
     fun blueServer() = App("blue", publicPort)
 

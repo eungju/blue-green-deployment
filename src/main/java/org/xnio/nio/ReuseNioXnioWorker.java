@@ -1,5 +1,6 @@
 package org.xnio.nio;
 
+import bluegreen.ReusePort;
 import org.xnio.*;
 import org.xnio.channels.AcceptingChannel;
 
@@ -19,7 +20,7 @@ public class ReuseNioXnioWorker extends NioXnioWorker {
         final ServerSocketChannel channel = ServerSocketChannel.open();
         try {
             if (optionMap.contains(Options.RECEIVE_BUFFER)) channel.socket().setReceiveBufferSize(optionMap.get(Options.RECEIVE_BUFFER, -1));
-            ReusePort.enableReusePort(channel);
+            ReusePort.DEFAULT.set(channel, true);
             channel.socket().setReuseAddress(optionMap.get(Options.REUSE_ADDRESSES, true));
             channel.configureBlocking(false);
             if (optionMap.contains(Options.BACKLOG)) {
