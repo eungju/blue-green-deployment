@@ -14,8 +14,7 @@ class AppControlServer(acceptorControl: ConnectionControl, port: Int) : AutoClos
             exchange.responseSender.send(acceptorControl.getGates()
                 .map {
                     listOf("name: ${it.name}",
-                        "state: ${it.getState()}",
-                        "established: ${it.getEstablished()}")
+                        "state: ${it.getState()}")
                         .joinToString(", ")
                 }
                 .joinToString("\r\n"))

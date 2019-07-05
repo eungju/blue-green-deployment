@@ -9,8 +9,6 @@ interface ConnectionGate {
 
     fun getState(): State
 
-    fun getEstablished(): Int
-
     enum class State {
         OPEN, CLOSED
     }

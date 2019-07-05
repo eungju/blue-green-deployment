@@ -6,13 +6,13 @@ import io.undertow.Undertow
 import io.undertow.UndertowOptions
 import io.undertow.server.HttpHandler
 import org.xnio.OptionMap
-import org.xnio.nio.ReuseNioXnioProvider
+import org.xnio.nio.ReusePortNioXnioWorker
 import java.time.Clock
 
 class App(val name: String, port: Int) : AutoCloseable {
     val connectionControl = ConnectionControl(Clock.systemUTC())
 
-    private val xnioWorker = ReuseNioXnioProvider().instance.createWorker(OptionMap.EMPTY)
+    private val xnioWorker = ReusePortNioXnioWorker.createWorker(true, OptionMap.EMPTY)
 
     private val publicServer = Undertow.builder()
         .setWorker<Undertow.Builder>(xnioWorker)

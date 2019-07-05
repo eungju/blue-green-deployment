@@ -40,8 +40,10 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
     compile 'io.undertow:undertow-core:2.0.22.Final'
-    compile 'org.eclipse.jetty:jetty-server:9.4.11.v20180605'
+
+    compile 'io.netty:netty-codec-http:4.1.37.Final'
 
     testCompile("org.junit.jupiter:junit-jupiter-api:5.5.0")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.5.0")

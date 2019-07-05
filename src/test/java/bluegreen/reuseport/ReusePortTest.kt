@@ -6,7 +6,7 @@ import java.nio.channels.ServerSocketChannel
 
 class ReusePortTest {
     @Test
-    fun jdk() {
+    fun socketOption() {
         assumeTrue(System.getProperty("java.version").split(".")[0].toInt() >= 9)
         val dut = SocketOptionReusePort()
         ServerSocketChannel.open().use { socket ->

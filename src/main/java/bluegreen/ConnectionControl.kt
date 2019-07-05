@@ -8,7 +8,7 @@ class ConnectionControl(private val clock: Clock) {
     private var state: State = State.CLOSED(clock.instant())
 
     fun register(connectionGate: ConnectionGate) {
-        if (state is ConnectionControl.State.OPEN) {
+        if (state is State.OPEN) {
             connectionGate.open()
         }
         gates.add(connectionGate)
@@ -31,8 +31,6 @@ class ConnectionControl(private val clock: Clock) {
     }
 
     fun getState(): State = state
-
-    fun getEstablished(): Int = gates.map { it.getEstablished() }.sum()
 
     sealed class State(open val timestamp: Instant) {
         data class OPEN(override val timestamp: Instant) : State(timestamp)

@@ -26,62 +26,8 @@ class DeploymentTest {
             .build(),
         null, null)
 
-    @Nested
-    inner class WhenOpen {
-        @Test
-        fun acceptNewConnection() {
-            blueServer().use { blue ->
-                blue.connectionControl.open()
-                connection().use { establishedConn ->
-                    assertEquals("blue", establishedConn.request(pingRequest()).body.get().decodeBodyToString(Charsets.UTF_8))
-                }
-                blue.connectionControl.close()
-            }
-        }
-    }
-
-    @Nested
-    inner class WhenClosed {
-        @Test
-        fun rejectNewConnections() {
-            blueServer().use { blue ->
-                blue.connectionControl.open()
-                connection().use { establishedConn ->
-                    establishedConn.request(pingRequest()).body.get()
-                }
-                blue.connectionControl.close()
-                assertThrows(Exception::class.java) { RawHttpConnection("localhost", publicPort) }
-            }
-        }
-
-        @Test
-        fun keepEstablishedConnections() {
-            blueServer().use { blue ->
-                blue.connectionControl.open()
-                connection().use { establishedConn ->
-                    establishedConn.request(pingRequest()).body.get()
-                    blue.connectionControl.close()
-                    assertEquals("blue", establishedConn.request(pingRequest()).body.get().decodeBodyToString(Charsets.UTF_8))
-                }
-            }
-        }
-
-        @Test
-        fun handleOneRequestAndThenClose() {
-            blueServer().use { blue ->
-                blue.connectionControl.open()
-                connection().use { establishedConn ->
-                    establishedConn.request(pingRequest()).body.get()
-                    blue.connectionControl.close()
-                    assertEquals("blue", establishedConn.request(pingRequest()).body.get().decodeBodyToString(Charsets.UTF_8))
-                    assertFalse(establishedConn.isOpen)
-                }
-            }
-        }
-    }
-
     @Test
-    fun handover() {
+    fun trafficHandover() {
         blueServer().use { blue ->
             greenServer().use { green ->
                 blue.connectionControl.open()
