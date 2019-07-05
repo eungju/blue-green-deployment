@@ -1,8 +1,8 @@
 package bluegreen;
 
-import com.athaydes.rawhttp.core.EagerHttpResponse;
-import com.athaydes.rawhttp.core.RawHttp;
-import com.athaydes.rawhttp.core.RawHttpRequest;
+import rawhttp.core.EagerHttpResponse;
+import rawhttp.core.RawHttp;
+import rawhttp.core.RawHttpRequest;
 
 import java.io.IOException;
 import java.io.InputStream;

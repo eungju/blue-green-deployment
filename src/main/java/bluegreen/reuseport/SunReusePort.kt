@@ -1,9 +1,9 @@
-package bluegreen
+package bluegreen.reuseport
 
 import java.io.FileDescriptor
 import java.nio.channels.ServerSocketChannel
 
-class SunReusePort : ReusePort() {
+class SunReusePort : ReusePort {
     private val SO_REUSEPORT: Int
     private val SOL_SOCKET: Int
 

@@ -3,9 +3,6 @@ package bluegreen
 import bluegreen.undertow.UndertowConnectionGate
 import io.undertow.Undertow
 import io.undertow.UndertowOptions
-import okhttp3.Call
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -13,7 +10,12 @@ import org.junit.jupiter.api.Test
 import org.xnio.OptionMap
 import org.xnio.XnioWorker
 import org.xnio.nio.NioXnioProvider
+import rawhttp.core.HttpVersion
+import rawhttp.core.RawHttpHeaders
+import rawhttp.core.RawHttpRequest
+import rawhttp.core.RequestLine
 import java.net.ConnectException
+import java.net.URI
 import java.time.Clock
 import java.util.Random
 
@@ -22,9 +24,9 @@ class ConnectionControlTest {
     private lateinit var worker: XnioWorker
     private lateinit var target: Undertow
     private lateinit var dut: ConnectionControl
-    private lateinit var gate: UndertowConnectionGate
-    private lateinit var client: OkHttpClient
-    private lateinit var request: Request
+    private lateinit var gate: ConnectionGate
+    private val HEADER_CONNECTION = "Connection"
+    private val STATUS_OK = 200
 
     @BeforeEach
     fun setUp() {
@@ -45,8 +47,6 @@ class ConnectionControlTest {
             .also {
                 dut.register(it)
             }
-        client = OkHttpClient()
-        request = Request.Builder().url("http://localhost:$port").build()
     }
 
     @AfterEach
@@ -54,34 +54,47 @@ class ConnectionControlTest {
         worker.shutdown()
     }
 
+    fun connect() = RawHttpConnection("localhost", port)
+
+    fun pingRequest() = RawHttpRequest(
+        RequestLine("GET", URI.create("/"), HttpVersion.HTTP_1_1),
+        RawHttpHeaders.newBuilder()
+            .with("Host", "localhost:$port")
+            .build(),
+        null, null)
+
     @Test
     fun connectionCount() {
         assertEquals(0, dut.getEstablished())
         dut.open()
-        client.newCall(request).response()
-        assertEquals(1, dut.getEstablished())
+        connect().use {
+            it.request(pingRequest())
+            assertEquals(1, dut.getEstablished())
+        }
     }
 
     @Test
     fun open() {
         assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
-        assertThrows(ConnectException::class.java, { client.newCall(request).response() })
+        assertThrows(ConnectException::class.java) { connect().request(pingRequest()) }
         dut.open()
         assertTrue(dut.getState() is ConnectionControl.State.OPEN)
-        assertEquals(200, client.newCall(request).response().code())
+        connect().use {
+            assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+        }
     }
 
     @Test
     fun openAndClose() {
         dut.open()
-        assertEquals(200, client.newCall(request).response().code())
-
-        dut.close()
-        assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
-        assertEquals(200, client.newCall(request).response().code())
-        assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
-        client.connectionPool().evictAll()
-        assertThrows(ConnectException::class.java, { client.newCall(request).response() })
+        connect().use {
+            assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+            dut.close()
+            assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
+            assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+            assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
+        }
+        assertThrows(ConnectException::class.java) { connect().request(pingRequest()) }
     }
 
     @Test
@@ -90,30 +103,29 @@ class ConnectionControlTest {
         dut.close()
         dut.open()
         assertTrue(dut.getState() is ConnectionControl.State.OPEN)
-        assertEquals(200, client.newCall(request).response().code())
-
-        dut.close()
-        assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
-        assertEquals(200, client.newCall(request).response().code())
-        client.connectionPool().evictAll()
-        assertThrows(ConnectException::class.java, { client.newCall(request).response() })
+        connect().use {
+            assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+            dut.close()
+            assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
+            assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+        }
+        assertThrows(ConnectException::class.java) { connect().request(pingRequest()) }
     }
 
     @Test
     fun closeEstablishedConnections() {
         dut.open()
-        client.newCall(request).response().let {
-            assertEquals(200, it.code())
-            assertEquals("keep-alive", it.header("Connection"))
-        }
-
-        dut.close()
-        assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
-        client.newCall(request).response().let {
-            assertEquals(200, it.code())
-            assertEquals("close", it.header("Connection"))
+        connect().use {
+            it.request(pingRequest()).let {
+                assertEquals(STATUS_OK, it.statusCode)
+                assertEquals("keep-alive", it.headers.getFirst(HEADER_CONNECTION).orElse(null))
+            }
+            dut.close()
+            assertTrue(dut.getState() is ConnectionControl.State.CLOSED)
+            it.request(pingRequest()).let {
+                assertEquals(STATUS_OK, it.statusCode)
+                assertEquals("close", it.headers.getFirst(HEADER_CONNECTION).orElse(null))
+            }
         }
     }
-
-    private fun Call.response() = this.execute().use { it }
 }

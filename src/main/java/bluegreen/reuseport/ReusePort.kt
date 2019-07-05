@@ -1,14 +1,14 @@
-package bluegreen
+package bluegreen.reuseport
 
 import java.nio.channels.ServerSocketChannel
 
-abstract class ReusePort {
-    abstract fun set(channel: ServerSocketChannel, value: Boolean)
+interface ReusePort {
+    fun set(channel: ServerSocketChannel, value: Boolean)
 
     companion object {
         @JvmField
         val DEFAULT = try {
-            JdkReusePort()
+            SocketOptionReusePort()
         } catch (e: UnsupportedOperationException) {
             SunReusePort()
         }

@@ -1,6 +1,6 @@
 package org.xnio.nio;
 
-import bluegreen.ReusePort;
+import bluegreen.reuseport.ReusePort;
 import org.xnio.*;
 import org.xnio.channels.AcceptingChannel;
 

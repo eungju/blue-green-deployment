@@ -1,4 +1,4 @@
-package bluegreen
+package bluegreen.reuseport
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -8,7 +8,7 @@ class ReusePortTest {
     @Test
     fun jdk() {
         assumeTrue(System.getProperty("java.version").split(".")[0].toInt() >= 9)
-        val dut = JdkReusePort()
+        val dut = SocketOptionReusePort()
         ServerSocketChannel.open().use { socket ->
             dut.set(socket, true)
         }

@@ -1,10 +1,10 @@
-package bluegreen
+package bluegreen.reuseport
 
 import java.net.SocketOption
 import java.net.StandardSocketOptions
 import java.nio.channels.ServerSocketChannel
 
-class JdkReusePort : ReusePort() {
+class SocketOptionReusePort : ReusePort {
     private val option: SocketOption<Boolean>
 
     init {
@@ -16,7 +16,7 @@ class JdkReusePort : ReusePort() {
         }
     }
 
-    override fun set(socket: ServerSocketChannel, value: Boolean) {
-        socket.setOption(option, value)
+    override fun set(channel: ServerSocketChannel, value: Boolean) {
+        channel.setOption(option, value)
     }
 }
