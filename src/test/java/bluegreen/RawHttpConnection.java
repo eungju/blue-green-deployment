@@ -1,14 +1,13 @@
 package bluegreen;
 
-import rawhttp.core.EagerHttpResponse;
-import rawhttp.core.RawHttp;
-import rawhttp.core.RawHttpRequest;
+import rawhttp.core.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.URI;
 
 public class RawHttpConnection implements AutoCloseable {
     private RawHttp rawHttp = new RawHttp();
@@ -52,5 +51,15 @@ public class RawHttpConnection implements AutoCloseable {
             }
         }
         return response;
+    }
+
+    public EagerHttpResponse<?> hello() throws IOException {
+        return request(new RawHttpRequest(
+                new RequestLine("GET", URI.create("/"), HttpVersion.HTTP_1_1),
+                RawHttpHeaders.newBuilder()
+                        .with("Host", "localhost:$port")
+                        .build(),
+                null, null)
+        );
     }
 }

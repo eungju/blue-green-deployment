@@ -28,7 +28,7 @@ class NettyConnectionGateTest : ConnectionGateTest() {
                                 override fun channelRead0(ctx: ChannelHandlerContext, msg: HttpObject) {
                                     if (msg is LastHttpContent) {
                                         val content: ByteBuf = Unpooled.copiedBuffer("Hello World.", CharsetUtil.UTF_8)
-                                        val response = DefaultFullHttpResponse(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content)
+                                        val response = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content)
                                         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain")
                                         response.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes())
                                         if (gate?.getState() == ConnectionGate.State.CLOSED) {

@@ -2,12 +2,7 @@ package bluegreen
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import rawhttp.core.HttpVersion
-import rawhttp.core.RawHttpHeaders
-import rawhttp.core.RawHttpRequest
-import rawhttp.core.RequestLine
 import java.net.ConnectException
-import java.net.URI
 import java.util.Random
 
 abstract class ConnectionGateTest {
@@ -18,19 +13,13 @@ abstract class ConnectionGateTest {
     
     fun connect() = RawHttpConnection("localhost", port)
 
-    fun pingRequest() = RawHttpRequest(
-        RequestLine("GET", URI.create("/"), HttpVersion.HTTP_1_1),
-        RawHttpHeaders.newBuilder()
-            .with("Host", "localhost:$port")
-            .build(),
-        null, null)
-
     @Test
     fun openAndClose() {
         server { dut ->
             dut.open()
+            assertTrue(dut.getState() == ConnectionGate.State.OPEN)
             connect().use {
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
                 dut.close()
                 assertTrue(dut.getState() == ConnectionGate.State.CLOSED)
             }
@@ -43,14 +32,14 @@ abstract class ConnectionGateTest {
             dut.open()
             assertTrue(dut.getState() == ConnectionGate.State.OPEN)
             connect().use {
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
             }
             dut.close()
             assertTrue(dut.getState() == ConnectionGate.State.CLOSED)
             dut.open()
             assertTrue(dut.getState() == ConnectionGate.State.OPEN)
             connect().use {
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
             }
             dut.close()
         }
@@ -61,7 +50,7 @@ abstract class ConnectionGateTest {
         server { dut ->
             dut.open()
             connect().use {
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
             }
             dut.close()
         }
@@ -81,9 +70,9 @@ abstract class ConnectionGateTest {
         server { dut ->
             dut.open()
             connect().use {
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
                 dut.close()
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
             }
         }
     }
@@ -93,9 +82,9 @@ abstract class ConnectionGateTest {
         server { dut ->
             dut.open()
             connect().use {
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
                 dut.close()
-                assertEquals(STATUS_OK, it.request(pingRequest()).statusCode)
+                assertEquals(STATUS_OK, it.hello().statusCode)
                 assertFalse(it.isOpen)
             }
         }
@@ -107,13 +96,13 @@ abstract class ConnectionGateTest {
             server { green ->
                 blue.open()
                 connect().use { blueConn ->
-                    assertEquals(STATUS_OK, blueConn.request(pingRequest()).statusCode)
+                    assertEquals(STATUS_OK, blueConn.hello().statusCode)
                     green.open()
                     blue.close()
                     connect().use { greenConn ->
-                        assertEquals(STATUS_OK, greenConn.request(pingRequest()).statusCode)
+                        assertEquals(STATUS_OK, greenConn.hello().statusCode)
                         assertTrue(greenConn.isOpen)
-                        assertEquals(STATUS_OK, blueConn.request(pingRequest()).statusCode)
+                        assertEquals(STATUS_OK, blueConn.hello().statusCode)
                         assertFalse(blueConn.isOpen)
                     }
                 }
